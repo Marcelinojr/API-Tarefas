@@ -10,9 +10,11 @@ using SistemaTarefa.Repositories;
 using SistemaTarefa.Repositories.Interfaces;
 
 
-var chaveSecreta = "eb5ab58e-3146-4be0-bce7-e42a972cb6d7";
 var builder = WebApplication.CreateBuilder(args);
 
+var jwtKey = builder.Configuration["Jwt:Key"];
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+var jwtAudience = builder.Configuration["Jwt:Audience"];
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -54,6 +56,7 @@ builder.Services.AddEntityFrameworkNpgsql()
 // Dependency Injection for Repositories
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<ITarefaRepository, TarefaRepository>();
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IViaCepIntegracao, ViaCepIntegracao>();
 builder.Services.AddRefitClient<IViaCepIntegracaoRefit>().ConfigureHttpClient(c =>
 {
@@ -63,16 +66,17 @@ builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(options => options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters()
-{
-    ValidateIssuer = false,
+}).AddJwtBearer(options =>
+options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters()
+
+{    ValidateIssuer = false,
     ValidateAudience = false,
     ValidateLifetime = true,
     ValidateIssuerSigningKey = true,
-    ValidIssuer = "SistemaTarefa",
-    ValidAudience = "SistemaTarefa",
-    IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(chaveSecreta)),
-    ClockSkew = TimeSpan.Zero
+    ValidIssuer = jwtIssuer,
+    ValidAudience = jwtAudience,
+    IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(jwtKey)),
+    ClockSkew = TimeSpan.Zero 
 });
 
 var app = builder.Build();

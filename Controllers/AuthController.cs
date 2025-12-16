@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using SistemaTarefa.Models;
+using SistemaTarefa.Repositories.Interfaces;
 
 namespace SistemaTarefa.Controllers
 {
@@ -15,22 +16,85 @@ namespace SistemaTarefa.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
+        private readonly IAuthRepository _authRepository;
+        private readonly IUsuarioRepository _usuarioRepository;
+
+        private readonly IConfiguration _configuration;
+        public AuthController(IAuthRepository authRepository, IUsuarioRepository usuarioRepository, IConfiguration configuration)
+        {
+            _authRepository = authRepository;
+            _usuarioRepository = usuarioRepository;
+            _configuration = configuration;
+        }
 
         [HttpPost]
-
-        public IActionResult Login([FromBody] LoginModel loginModel)
+        public async Task<ActionResult<AuthModel>> Login([FromBody] LoginRequestModel loginRequest)
         {
+            var validateCredentials = await _usuarioRepository.GetByEmail(loginRequest.Email);
+            if (validateCredentials == null || validateCredentials.Senha != loginRequest.Password)
+            {
+                return BadRequest("Email ou senha inválidos.");
+            }
 
-            var token = GerarTokenJwt();
-            return Ok(new { Token = token });
+            var existingAuth = await _authRepository.GetByUsuarioId(validateCredentials.Id);
+
+            if (existingAuth == null)
+            {
+                await CreateAuth(validateCredentials);
+                return Ok("Token criado com sucesso.");
+            }
+            else
+            {
+                await UpdateAuth(validateCredentials);
+                var checkValidToken = await _authRepository.ValidateToken(existingAuth.Token);
+
+                if (!checkValidToken)
+                {
+                    await CreateAuth(validateCredentials);
+                    return Ok("Token criado com sucesso.");
+                }
+
+                return Ok("Token criado com sucesso.");
+            }
+
+
+
+        }
+
+        private async Task<bool> ValidateToken()
+        {
+            throw new NotImplementedException();
+        }
+
+        private async Task<bool> CreateAuth(UsuarioModel validateCredentials)
+        {
+            AuthModel authModel = new AuthModel();
+
+            authModel.UsuarioId = validateCredentials.Id;
+            authModel.Token = GerarTokenJwt();
+            
+            await _authRepository.CreateToken(authModel);
+
+            return true;
+        }
+
+        private async Task<bool> UpdateAuth(UsuarioModel validateCredentials)
+        {
+            AuthModel authModel = new AuthModel();
+
+            authModel.Token = GerarTokenJwt();
+
+            await _authRepository.UpdateToken(authModel, validateCredentials.Id);
+
+
+            return true;
         }
 
 
         private string GerarTokenJwt()
         {
-            string chaveSecreta = "eb5ab58e-3146-4be0-bce7-e42a972cb6d7";
 
-            var chave = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(chaveSecreta));
+            var chave = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
             var credencials = new SigningCredentials(chave, SecurityAlgorithms.HmacSha256);
 
             var claims = new[]
@@ -40,9 +104,9 @@ namespace SistemaTarefa.Controllers
             };
 
             var token = new System.IdentityModel.Tokens.Jwt.JwtSecurityToken(
-                issuer: "SistemaTarefa",
-                audience: "SistemaTarefa",
-                claims: null,
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
+                claims: claims,
                 expires: DateTime.Now.AddHours(1),
                 signingCredentials: credencials
             );

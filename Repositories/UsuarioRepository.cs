@@ -47,12 +47,13 @@ namespace SistemaTarefa.Repositories
             UsuarioModel usuarioPorId = await GetByID(id);
             if (usuarioPorId == null)
             {
-                throw new Exception($"Usuário para o ID: {id} não foi encontrado no banco de dados.");
+                throw new Exception($"Usuário para o ID: {id} não foi encontrado.");
             }
 
             // Update the user fields
             usuarioPorId.Nome = usuario.Nome;
             usuarioPorId.Email = usuario.Email;
+            usuarioPorId.Senha = usuario.Senha;
 
             // Save changes to the database
             _dbcontext.Usuarios.Update(usuarioPorId);
@@ -66,7 +67,7 @@ namespace SistemaTarefa.Repositories
             UsuarioModel usuarioPorId = await GetByID(id);
             if (usuarioPorId == null)
             {
-                throw new Exception($"Usuário para o ID: {id} não foi encontrado no banco de dados.");
+                throw new Exception($"Usuário para o ID: {id} não foi encontrado.");
             }
 
             _dbcontext.Usuarios.Remove(usuarioPorId);
@@ -74,5 +75,15 @@ namespace SistemaTarefa.Repositories
             return true;
         }
 
+        public async Task<UsuarioModel> GetByEmail(string email)
+        {
+            var usuario = await _dbcontext.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
+            if (usuario == null)
+            {
+                throw new Exception($"Usuário com o email: {email} não foi encontrado.");
+            }
+            
+            return usuario;
+        }
     }
 }

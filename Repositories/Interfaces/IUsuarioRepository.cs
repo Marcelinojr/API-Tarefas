@@ -10,6 +10,7 @@ namespace SistemaTarefa.Repositories.Interfaces
     {
         Task<List<UsuarioModel>> GetAll();
         Task<UsuarioModel> GetByID(int id);
+        Task<UsuarioModel> GetByEmail(string email);
         Task<UsuarioModel> Create(UsuarioModel usuario);
 
         Task<UsuarioModel> Update(UsuarioModel usuario, int id);
