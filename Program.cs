@@ -19,6 +19,7 @@ builder.Services.AddEntityFrameworkNpgsql()
 
 // Dependency Injection for Repositories
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+builder.Services.AddScoped<ITarefaRepository, TarefaRepository>();
 
 var app = builder.Build();
 
