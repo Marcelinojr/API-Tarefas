@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SistemaTarefa.Models;
 using SistemaTarefa.Repositories.Interfaces;
 
 namespace SistemaTarefa.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class TarefaController : ControllerBase
