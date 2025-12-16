@@ -37,24 +37,25 @@ namespace SistemaTarefa.Controllers
             }
 
             var existingAuth = await _authRepository.GetByUsuarioId(validateCredentials.Id);
+            var token = string.Empty;
 
             if (existingAuth == null)
             {
-                await CreateAuth(validateCredentials);
-                return Ok("Token criado com sucesso.");
+                token = await CreateAuth(validateCredentials);
+                return Ok(token);
             }
             else
             {
-                await UpdateAuth(validateCredentials);
                 var checkValidToken = await _authRepository.ValidateToken(existingAuth.Token);
 
                 if (!checkValidToken)
                 {
-                    await CreateAuth(validateCredentials);
-                    return Ok("Token criado com sucesso.");
+                    token = await CreateAuth(validateCredentials);
+                    return Ok(token);
                 }
+                token = await UpdateAuth(validateCredentials);
 
-                return Ok("Token criado com sucesso.");
+                return Ok(token);
             }
 
 
@@ -66,28 +67,30 @@ namespace SistemaTarefa.Controllers
             throw new NotImplementedException();
         }
 
-        private async Task<bool> CreateAuth(UsuarioModel validateCredentials)
+        private async Task<string> CreateAuth(UsuarioModel validateCredentials)
         {
             AuthModel authModel = new AuthModel();
 
             authModel.UsuarioId = validateCredentials.Id;
             authModel.Token = GerarTokenJwt();
-            
+
             await _authRepository.CreateToken(authModel);
 
-            return true;
+            return authModel.Token;
         }
 
-        private async Task<bool> UpdateAuth(UsuarioModel validateCredentials)
+        private async Task<string> UpdateAuth(UsuarioModel validateCredentials)
         {
             AuthModel authModel = new AuthModel();
 
-            authModel.Token = GerarTokenJwt();
+            string token = GerarTokenJwt();
+            authModel.UsuarioId = validateCredentials.Id;
+            authModel.Token = token;
 
             await _authRepository.UpdateToken(authModel, validateCredentials.Id);
 
 
-            return true;
+            return token;
         }
 
 

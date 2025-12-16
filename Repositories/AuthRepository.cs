@@ -30,17 +30,28 @@ namespace SistemaTarefa.Repositories.Interfaces
         {
             AuthModel auth = await _dbcontext.Auth
             .FirstOrDefaultAsync(a => a.UsuarioId == usuarioId);
-            if (auth == null)
-            {
-                throw new Exception($"Token para o UsuarioId: {usuarioId}.");
-            }
+            // if (auth == null)
+            // {
+            //     throw new Exception($"usuarioId: {usuarioId} não possui token associado.");
+            // }
 
             return auth;
         }
 
         public async Task<AuthModel> UpdateToken(AuthModel auth, int id)
         {
-            throw new NotImplementedException();
+            var existingAuth = await _dbcontext.Auth
+            .FirstOrDefaultAsync(a => a.UsuarioId == id);
+            if (existingAuth == null)
+            {
+                throw new Exception($"usuarioId: {id} não possui token associado.");
+            }
+
+            existingAuth.Token = auth.Token;
+            _dbcontext.Auth.Update(existingAuth);
+            await _dbcontext.SaveChangesAsync();
+
+            return existingAuth;
         }
 
         public async Task<bool> ValidateToken(string token)
