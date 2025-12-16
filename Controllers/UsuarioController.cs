@@ -10,6 +10,7 @@ using SistemaTarefa.Repositories.Interfaces;
 namespace SistemaTarefa.Controllers
 {
     [Route("api/[controller]")]
+    [ApiController]
     public class UsuarioController : ControllerBase
     {
 

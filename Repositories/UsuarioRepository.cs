@@ -29,9 +29,9 @@ namespace SistemaTarefa.Repositories
         }
 
 
-        public Task<List<UsuarioModel>> GetAll()
+        public async Task<List<UsuarioModel>> GetAll()
         {
-            throw new NotImplementedException();
+            return await _dbcontext.Usuarios.ToListAsync();
         }
 
         public async Task<UsuarioModel> Create(UsuarioModel usuario)
