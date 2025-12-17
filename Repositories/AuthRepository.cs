@@ -28,12 +28,10 @@ namespace SistemaTarefa.Repositories.Interfaces
 
         public async Task<AuthModel> GetByUsuarioId(int usuarioId)
         {
+            
             AuthModel auth = await _dbcontext.Auth
             .FirstOrDefaultAsync(a => a.UsuarioId == usuarioId);
-            // if (auth == null)
-            // {
-            //     throw new Exception($"usuarioId: {usuarioId} não possui token associado.");
-            // }
+
 
             return auth;
         }
@@ -66,5 +64,7 @@ namespace SistemaTarefa.Repositories.Interfaces
             return true;
         }
     }
+
+    
 
 }

@@ -64,6 +64,7 @@ builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 // Dependency Injection for  Services
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<ITarefaService, TarefaService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddScoped<IViaCepIntegracao, ViaCepIntegracao>();
 builder.Services.AddRefitClient<IViaCepIntegracaoRefit>().ConfigureHttpClient(c =>
