@@ -14,7 +14,7 @@ using SistemaTarefa.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var jwtKey = builder.Configuration["Jwt:Key"];
+var jwtKey = builder.Configuration["Jwt:Key"] != null ? builder.Configuration["Jwt:Key"]  : null;
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
 var jwtAudience = builder.Configuration["Jwt:Audience"];
 
@@ -59,9 +59,11 @@ builder.Services.AddEntityFrameworkNpgsql()
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<ITarefaRepository, TarefaRepository>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
-// Services
-builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 
+
+// Dependency Injection for  Services
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
+builder.Services.AddScoped<ITarefaService, TarefaService>();
 
 builder.Services.AddScoped<IViaCepIntegracao, ViaCepIntegracao>();
 builder.Services.AddRefitClient<IViaCepIntegracaoRefit>().ConfigureHttpClient(c =>

@@ -5,8 +5,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SistemaTarefa.DTOs;
 using SistemaTarefa.Models;
 using SistemaTarefa.Repositories.Interfaces;
+using SistemaTarefa.Services.Interfaces;
 
 namespace SistemaTarefa.Controllers
 {
@@ -16,46 +18,52 @@ namespace SistemaTarefa.Controllers
     public class TarefaController : ControllerBase
     {
 
-        private readonly ITarefaRepository _tarefaRepository;
-        public TarefaController(ITarefaRepository tarefaRepository)
+        private readonly ITarefaService _tarefaService;
+        public TarefaController(ITarefaService tarefaService)
         {
-            _tarefaRepository = tarefaRepository;
+            _tarefaService = tarefaService;
         }
 
 
         [HttpGet]
-        public async Task<ActionResult<List<TarefaModel>>> GetAllTarefas()
+        public async Task<ActionResult<List<TarefaResponseDTO>>> GetAllTarefas()
         {
 
-            List<TarefaModel> tarefas = await _tarefaRepository.GetAll();
+            List<TarefaResponseDTO> tarefas = await _tarefaService.GetAllAsync();
             return Ok(tarefas);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<TarefaModel>> GetByID(int id)
+        public async Task<ActionResult<TarefaResponseDTO>> GetByID(int id)
         {
-            TarefaModel tarefa = await _tarefaRepository.GetByID(id);
+            TarefaResponseDTO tarefa = await _tarefaService.GetByIdAsync(id);
             return Ok(tarefa);
         }
 
         [HttpPost]
-        public async Task<ActionResult<TarefaModel>> Create([FromBody] TarefaModel tarefaModel)
+        public async Task<ActionResult<TarefaResponseDTO>> Create([FromBody] TarefaCreateDTO dto)
         {
-            TarefaModel tarefa = await _tarefaRepository.Create(tarefaModel);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            TarefaResponseDTO tarefa = await _tarefaService.CreateAsync(dto);
+
             return Ok(tarefa);
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<TarefaModel>> Update([FromBody] TarefaModel tarefaModel, int id)
+        public async Task<ActionResult<TarefaResponseDTO>> Update([FromBody] TarefaUpdateDTO dto, int id)
         {
-            TarefaModel tarefa = await _tarefaRepository.Update(tarefaModel, id);
-            return Ok(tarefa);     
+            TarefaResponseDTO tarefa = await _tarefaService.UpdateAsync(id, dto);
+            return Ok(tarefa);
         }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id)
         {
-            await _tarefaRepository.Delete(id);
+            await _tarefaService.DeleteAsync(id);
             return NoContent();
         }
     }
