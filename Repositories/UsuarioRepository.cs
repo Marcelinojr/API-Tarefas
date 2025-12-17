@@ -85,5 +85,21 @@ namespace SistemaTarefa.Repositories
             
             return usuario;
         }
+
+        public async Task<UsuarioModel> UpdateSenha(UsuarioModel usuario, int id)
+        {
+            var usuarioPorId = await _dbcontext.Usuarios.FirstOrDefaultAsync(u => u.Id == id);
+            if (usuarioPorId == null)
+            {
+                throw new Exception($"Usuário para o ID: {id} não foi encontrado.");
+            }
+
+            usuarioPorId.Senha = usuario.Senha;
+
+            _dbcontext.Usuarios.Update(usuarioPorId);
+            await _dbcontext.SaveChangesAsync();
+
+            return usuarioPorId;
+        }
     }
 }

@@ -14,7 +14,7 @@ namespace SistemaTarefa.Repositories.Interfaces
         Task<UsuarioModel> Create(UsuarioModel usuario);
 
         Task<UsuarioModel> Update(UsuarioModel usuario, int id);
-
+        Task<UsuarioModel> UpdateSenha(UsuarioModel usuario, int id);
         Task<bool> Delete(int id);
 
     }
