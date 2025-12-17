@@ -8,6 +8,8 @@ using SistemaTarefa.Integration.Interfaces;
 using SistemaTarefa.Integration.Refit;
 using SistemaTarefa.Repositories;
 using SistemaTarefa.Repositories.Interfaces;
+using SistemaTarefa.Services;
+using SistemaTarefa.Services.Interfaces;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -57,6 +59,10 @@ builder.Services.AddEntityFrameworkNpgsql()
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<ITarefaRepository, TarefaRepository>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+// Services
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
+
+
 builder.Services.AddScoped<IViaCepIntegracao, ViaCepIntegracao>();
 builder.Services.AddRefitClient<IViaCepIntegracaoRefit>().ConfigureHttpClient(c =>
 {
@@ -92,6 +98,8 @@ app.UseHttpsRedirection();
 
 // Authentication Middleware
 app.UseAuthentication();
+
+
 // Authorization Middleware
 app.UseAuthorization();
 

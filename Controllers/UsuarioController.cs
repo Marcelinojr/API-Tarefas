@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using SistemaTarefa.DTOs;
 using SistemaTarefa.Models;
 using SistemaTarefa.Repositories.Interfaces;
+using SistemaTarefa.Services.Interfaces;
 
 namespace SistemaTarefa.Controllers
 {
@@ -17,10 +18,10 @@ namespace SistemaTarefa.Controllers
     public class UsuarioController : ControllerBase
     {
 
-        private readonly IUsuarioRepository _usuarioRepository;
-        public UsuarioController(IUsuarioRepository usuarioRepository)
+        private readonly IUsuarioService _usuarioService;
+        public UsuarioController(IUsuarioService usuarioService)
         {
-            _usuarioRepository = usuarioRepository;
+            _usuarioService = usuarioService;
         }
 
 
@@ -29,139 +30,85 @@ namespace SistemaTarefa.Controllers
         {
 
             // repository retorna lista de models
-            var usuarios = await _usuarioRepository.GetAll();
+            var usuarios = await _usuarioService.GetAllAsync();
 
-            // converte manualmente a lista de models para lista de DTOs
-            var usuariosDTO = usuarios.Select(u => new UsuarioResponseDTO
-            {
-                Id = u.Id,
-                Nome = u.Nome,
-                Email = u.Email
-                //nao vamos incluir a senha no DTO de resposta
-            }).ToList();
-
-            return Ok(usuariosDTO);
+            return Ok(usuarios);
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<UsuarioResponseDTO>> GetByID(int id)
         {
-            //Receber do models e converter para DTO
-            var usuarios = await _usuarioRepository.GetByID(id);
-            if(usuarios == null)
-            {
-                return NotFound(new { message = "Usuário não encontrado" });
-            }
-            var usuarioDTO = new UsuarioResponseDTO
-            {
-                Id = usuarios.Id,
-                Nome = usuarios.Nome,
-                Email = usuarios.Email
-            };
 
-            return Ok(usuarioDTO);
+            var usuarios = await _usuarioService.GetByIdAsync(id);
+
+            return Ok(usuarios);
         }
 
         [HttpPost]
-        public async Task<ActionResult<UsuarioCreateDTO>> Create([FromBody] UsuarioCreateDTO usuarioCreateDTO)
+        public async Task<ActionResult<UsuarioCreateDTO>> Create([FromBody] UsuarioCreateDTO dto)
         {
-            //Validar com base modelo de dados especificado no parametros
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            //validar se o email ja existe
-            var usuarioExistente = await _usuarioRepository.GetByEmail(usuarioCreateDTO.Email);
-            if (usuarioExistente != null)
+            try
             {
-                return Conflict("Email já cadastrado.");
+                var usuario = await _usuarioService.CreateAsync(dto);
+                return CreatedAtAction(nameof(GetByID), new { id = usuario.Id }, usuario);
             }
-
-            // Converter DTO para Model
-            var usuarioModel = new UsuarioModel
+            catch (Exception ex)
             {
-                Nome = usuarioCreateDTO.Nome,
-                Email = usuarioCreateDTO.Email,
-                Senha = BCrypt.Net.BCrypt.HashPassword(usuarioCreateDTO.Senha)
-            };
-
-            // Converter Model para ResponseDTO 
-            var usuarioResponseDTO = new UsuarioResponseDTO
-            {
-                Id = usuarioModel.Id,
-                Nome = usuarioModel.Nome,
-                Email = usuarioModel.Email
-            };
-
-            // Chamar o repositório para criar o usuário
-            UsuarioModel usuario = await _usuarioRepository.Create(usuarioModel);
-
-            return CreatedAtAction(nameof(GetByID), new { id = usuario.Id }, usuarioResponseDTO);
+                return Conflict(new { message = ex.Message });
+            }
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<UsuarioUpdateDTO>> Update([FromBody] UsuarioUpdateDTO usuarioUpdateDTO, int id)
+        public async Task<ActionResult<UsuarioUpdateDTO>> Update([FromBody] UsuarioUpdateDTO dto, int id)
         {
             // Validacao
-            if(!ModelState.IsValid){
+            if (!ModelState.IsValid)
+            {
                 return BadRequest(ModelState);
             }
 
-            //validar se o user existe
-            var usuarioExistente = await _usuarioRepository.GetByID(id);
-            if(usuarioExistente == null){
-                return NotFound("Usuário não encontrado.");
+            try
+            {
+                var usuario = await _usuarioService.UpdateAsync(id, dto);
+                return Ok(usuario);
             }
-
-            // Converter DTO para Model
-            // var usuarioModel = new UsuarioModel
-            // {
-            //     Nome = usuarioUpdateDTO.Nome,
-            //     Email = usuarioUpdateDTO.Email,
-            // };
-            usuarioExistente.Nome = usuarioUpdateDTO.Nome;
-            usuarioExistente.Email = usuarioUpdateDTO.Email;
-            
-
-            // Chamar o repositório para atualizar o usuário
-            UsuarioModel usuarioAtualizado = await _usuarioRepository.Update(usuarioExistente, id);
-
-            // Converter Model para ResponseDTO 
-            var responseDTO = new UsuarioResponseDTO{
-                Id = usuarioAtualizado.Id,
-                Nome = usuarioAtualizado.Nome,
-                Email = usuarioAtualizado.Email
-            };
-            return Ok(responseDTO);
+            catch (Exception ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
         }
+
         [HttpPut("{id}/senha")]
-        public async Task<ActionResult> AlterarSenha(int id, [FromBody] UsuarioPasswordDTO usuarioPasswordDTO){
-            var usuario = await _usuarioRepository.GetByID(id);
+        public async Task<ActionResult> AlterarSenha(int id, [FromBody] UsuarioPasswordDTO dto)
+        {
+            var usuario = await _usuarioService.GetByIdAsync(id);
 
-            if(usuario == null){
-                return NotFound(new {message = "Usuario nao encontrado"});
+            try
+            {
+                await _usuarioService.AlterarSenhaAsync(id, dto);
+                return NoContent();
             }
-            if(!BCrypt.Net.BCrypt.Verify(usuarioPasswordDTO.SenhaAtual, usuario.Senha)){
-                return BadRequest(new {message = "Senha atual incorreta"});
+            catch (Exception ex)
+            {
+                return NotFound(new { message = ex.Message });
             }
-
-
-
-            usuario.Senha = BCrypt.Net.BCrypt.HashPassword(usuarioPasswordDTO.NovaSenha);
-            await _usuarioRepository.UpdateSenha(usuario, id);
-            return NoContent();
         }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id)
         {
-            var usuario = await _usuarioRepository.GetByID(id);
+            var usuario = await _usuarioService.GetByIdAsync(id);
 
-            if(usuario == null){
-                return NotFound(new {message = "Usuario nao encontrado"});
+            if (usuario == null)
+            {
+                return NotFound(new { message = "Usuario nao encontrado" });
             }
-            await _usuarioRepository.Delete(id);
+            await _usuarioService.DeleteAsync(id);
             return NoContent();
         }
     }
